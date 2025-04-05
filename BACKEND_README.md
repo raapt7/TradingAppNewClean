@@ -90,17 +90,18 @@ This document outlines the development roadmap for the backend services of the T
 ## Development Environment Setup (Free Options)
 
 ### Database Options (Development Phase)
-1. **SQLite**
+1. **YugabyteDB Free Tier**
+   - 5GB of storage free
+   - Single region deployment
+   - 1 vCPU
+   - PostgreSQL compatibility 
+   - Perfect for development and small applications
+
+2. **SQLite**
    - Free, file-based database
    - Perfect for development
    - No server required
    - Simple to set up and use
-
-2. **MongoDB Atlas Free Tier**
-   - 512MB storage free
-   - Shared RAM
-   - Enough for development and testing
-   - Easy cloud-based management
 
 3. **Firebase Firestore Free Tier**
    - 1GB storage free

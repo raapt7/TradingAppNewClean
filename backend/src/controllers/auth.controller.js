@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user.model');
+const { Op } = require('sequelize');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -15,7 +16,7 @@ exports.register = async (req, res, next) => {
     const { name, email, password } = req.body;
 
     // Check if user already exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ where: { email } });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -24,17 +25,17 @@ exports.register = async (req, res, next) => {
     const user = await User.create({
       name,
       email,
-      password // Password will be hashed in the model's pre-save hook
+      password // Password will be hashed in the model's hooks
     });
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(201).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email
       }
@@ -50,21 +51,21 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ where: { email } });
     
     // Check if user exists and password is correct
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(200).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email
       }
@@ -92,7 +93,7 @@ exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Find user by id
-    const user = await User.findById(decoded.id);
+    const user = await User.findByPk(decoded.id);
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
@@ -116,7 +117,7 @@ exports.getCurrentUser = async (req, res) => {
   res.status(200).json({
     success: true,
     user: {
-      id: req.user._id,
+      id: req.user.id,
       name: req.user.name,
       email: req.user.email,
       createdAt: req.user.createdAt

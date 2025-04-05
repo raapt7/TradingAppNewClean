@@ -1,60 +1,76 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const { sequelize } = require('../config/db');
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, 'Please provide a name'],
-      trim: true,
-      maxlength: [50, 'Name cannot be more than 50 characters']
-    },
-    email: {
-      type: String,
-      required: [true, 'Please provide an email'],
-      unique: true,
-      lowercase: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email'
-      ]
-    },
-    password: {
-      type: String,
-      required: [true, 'Please provide a password'],
-      minlength: [6, 'Password must be at least 6 characters'],
-      select: false // Don't return password in queries
-    },
-    role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user'
-    },
-    isVerified: {
-      type: Boolean,
-      default: false
-    },
-    verificationToken: String,
-    verificationTokenExpires: Date,
-    resetPasswordToken: String,
-    resetPasswordExpires: Date
+const User = sequelize.define('User', {
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [1, 50]
+    }
   },
-  { timestamps: true }
-);
-
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  // Only hash the password if it's modified (or new)
-  if (!this.isModified('password')) return next();
-  
-  // Generate salt
-  const salt = await bcrypt.genSalt(10);
-  
-  // Hash password
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [6, 100]
+    }
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'admin'),
+    defaultValue: 'user'
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  verificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  verificationTokenExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  resetPasswordToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  resetPasswordExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  timestamps: true
 });
 
-const User = mongoose.model('User', userSchema);
+// Hook to hash password before saving
+User.beforeCreate(async (user) => {
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+});
+
+// Hook to hash password before update
+User.beforeUpdate(async (user) => {
+  if (user.changed('password')) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
+  }
+});
+
+// Instance method to check if password matches
+User.prototype.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = User; 

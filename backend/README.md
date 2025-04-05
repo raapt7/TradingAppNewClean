@@ -6,7 +6,7 @@ This is the backend server for the Trading App, providing authentication, user m
 
 ### Prerequisites
 - Node.js (v14+ recommended)
-- MongoDB or MongoDB Atlas account (for development)
+- YugabyteDB account (free tier available)
 
 ### Installation
 
@@ -27,8 +27,20 @@ PORT=5000
 NODE_ENV=development
 JWT_SECRET=your_secret_key_here
 JWT_EXPIRES_IN=1d
-MONGODB_URI=mongodb://localhost:27017/trading-app
+YUGABYTE_HOST=free-tier.gcp.yugabyte.com
+YUGABYTE_PORT=5433
+YUGABYTE_DB=trading_app
+YUGABYTE_USER=admin
+YUGABYTE_PASSWORD=your_password_here
 ```
+
+### YugabyteDB Free Tier Setup
+
+1. Sign up for a free YugabyteDB Managed account at [cloud.yugabyte.com](https://cloud.yugabyte.com)
+2. Create a free-tier cluster
+3. Create a database named 'trading_app'
+4. Make note of your connection details (host, port, username, password)
+5. Add these details to your `.env` file
 
 ### Development
 

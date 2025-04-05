@@ -4,7 +4,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 // Database connection
-const connectDB = require('./config/db');
+const { connectDB } = require('./config/db');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -35,6 +35,20 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  
+  // Handle Sequelize specific errors
+  if (err.name === 'SequelizeValidationError') {
+    return res.status(400).json({
+      message: err.errors.map(e => e.message).join(', ')
+    });
+  }
+  
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      message: 'Data already exists'
+    });
+  }
+  
   res.status(500).json({
     message: err.message || 'Internal Server Error',
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
